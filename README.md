@@ -18,7 +18,7 @@ Terminal-based chatbot that uses Retrieval-Augmented Generation (RAG) to answer 
 
 ## Installation
 ```bash
-git clone https://github.com/<your-username>/rag-chatbot-terminal.git
+git clone https://github.com/Swetha0515/rag-chatbot-terminal.git
 cd rag-chatbot-terminal
 
 # Create and activate virtual environment

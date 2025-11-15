@@ -13,7 +13,7 @@ A terminal-based chatbot that uses Retrieval-Augmented Generation (RAG) to answe
 
 ## 🚀 Installation
 ```bash
-git clone https://github.com/<your-username>/rag-chatbot-terminal.git
+git clone https://github.com/Swetha0515/rag-chatbot-terminal.git
 cd rag-chatbot-terminal
 python3 -m venv venv
 source venv/bin/activate   # On Windows: venv\Scripts\activate

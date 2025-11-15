@@ -27,3 +27,11 @@ source venv/bin/activate   # On Windows: venv\Scripts\Activate.ps1
 
 # Install dependencies
 pip install -r requirements.txt
+
+## ▶️ Usage
+
+Run the chatbot on a PDF:
+
+```bash
+python3 rag_terminal_chatbot.py /path/to/document.pdf
+

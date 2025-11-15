@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python3
 """
 Fixed RAG terminal chatbot (improved retrieval + safer generation)
 
@@ -12,6 +12,12 @@ Usage examples:
     python3 rag_terminal_chatbot.py /path/to/SWETHA_RESUME.pdf
     python3 rag_terminal_chatbot.py /path/to/SWETHA_RESUME.pdf --llm distilgpt2
 """
+"""
+RAG Terminal Chatbot (Open-Source)
+
+This script builds a Retrieval-Augmented Generation (RAG) chatbot that answers
+questions based on the content of a PDF document. All components are open-source.
+"""
 
 import os
 import sys
@@ -19,10 +25,17 @@ import argparse
 import pickle
 from typing import List
 
-import pdfplumber
-import faiss
+# PDF processing
+import pdfplumber    # chosen for robust open-source PDF text extract
+
+# Vector database
+import faiss         # chosen for efficient similarity search over embeddings
+
+# Embeddings
 import numpy as np
-from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer     # chosen for semantic embeddings
+
+# LLMs
 import torch
 from transformers import (
     AutoTokenizer,
@@ -32,7 +45,7 @@ from transformers import (
 )
 
 # ---------------- Configuration ----------------
-EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"    # lightweight + accurate embeddings
 CACHE_DIR = ".rag_cache"
 CHUNK_SIZE = 800
 CHUNK_OVERLAP = 200
@@ -64,6 +77,10 @@ def ensure_dir(path):
 
 
 def extract_text_from_pdf(pdf_path: str) -> str:
+    """
+    Extract text from a PDF using pdfplumber.
+    Why pdfplumber? It's open-source, handles complex layouts, and is widely used for text extraction.
+    """
     all_text = []
     with pdfplumber.open(pdf_path) as pdf:
         for page in pdf.pages:
@@ -74,6 +91,10 @@ def extract_text_from_pdf(pdf_path: str) -> str:
 
 
 def chunk_text(text: str, chunk_size=CHUNK_SIZE, overlap=CHUNK_OVERLAP) -> List[str]:
+    """
+    Chunk text into overlapping segments.
+    Why overlap? Ensures that answers spanning chunk boundaries are still retrievable.
+    """
     chunks = []
     start = 0
     L = len(text)
@@ -89,6 +110,10 @@ def chunk_text(text: str, chunk_size=CHUNK_SIZE, overlap=CHUNK_OVERLAP) -> List[
 
 
 def build_embeddings(passages: List[str], model_name: str, basename: str):
+    """
+    Build embeddings using Sentence Transformers.
+    Why MiniLM? It's small and fast, yet provides high-quality semantic embeddings.
+    """
     ensure_dir(CACHE_DIR)
     cache_path = os.path.join(CACHE_DIR, f"embeddings_{basename}.pkl")
     if os.path.exists(cache_path):
@@ -109,6 +134,10 @@ def build_embeddings(passages: List[str], model_name: str, basename: str):
 
 
 def build_faiss_index(embeddings: np.ndarray, basename: str):
+    """
+    Build FAISS index using L2 distance.
+    Why FAISS? It's open-source, optimized for similarity search, and widely used in industry.
+    """
     ensure_dir(CACHE_DIR)
     index_path = os.path.join(CACHE_DIR, f"faiss_{basename}.index")
     emb_dim = embeddings.shape[1]
@@ -133,6 +162,10 @@ def build_faiss_index(embeddings: np.ndarray, basename: str):
 
 
 def load_llm(model_name: str):
+    """
+    Load open-source LLM via Hugging Face Transformers.
+    Why Hugging Face? Provides access to many open-source models (GPT-Neo, FLAN-T5, BART).
+    """
     print(f"[info] Loading model '{model_name}' on {DEVICE} ...")
     config = AutoConfig.from_pretrained(model_name)
     tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -150,11 +183,19 @@ def load_llm(model_name: str):
 
 
 def truncate_context_by_tokens(tokenizer, context: str, max_tokens: int = MAX_CONTEXT_TOKENS) -> str:
+    """
+    Token-based truncation avoids cutting mid-word or mid-sentence.
+    Keeps prompt size manageable for LLMs.
+    """
     tokens = tokenizer.encode(context, truncation=True, max_length=max_tokens)
     return tokenizer.decode(tokens, skip_special_tokens=True)
 
 
 def generate_answer(tokenizer, model, model_type: str, prompt: str, min_words=50, max_words=100):
+    """
+    Generate answer using open-source LLM.
+    Why FLAN-T5 or GPT-Neo? They are open-source, instruction-tuned, and suitable for concise factual answers.
+    """
     if model_type == "seq2seq":
         inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=1024).to(DEVICE)
         with torch.no_grad():
@@ -193,6 +234,10 @@ def generate_answer(tokenizer, model, model_type: str, prompt: str, min_words=50
 
 
 def prepare_context(passages: List[str], scores: List[float], tokenizer, top_k: int = TOP_K):
+    """
+    Assemble top-K retrieved passages with headers.
+    Why headers? Transparency: shows which passages were used.
+    """
     parts = []
     for i, (p, s) in enumerate(zip(passages[:top_k], scores[:top_k])):
         parts.append(f"[Passage {i+1} | score={float(s):.4f}]\n{p}")
@@ -201,6 +246,10 @@ def prepare_context(passages: List[str], scores: List[float], tokenizer, top_k: 
 
 
 def run_rag_interactive(pdf_path: str, llm_model_name: str = "google/flan-t5-base"):
+    """
+    Main interactive loop.
+    Why terminal input? Simple, portable, and meets machine test requirement.
+    """
     basename = os.path.splitext(os.path.basename(pdf_path))[0]
     print("[info] Extracting text from PDF...")
     text = extract_text_from_pdf(pdf_path)

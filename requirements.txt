@@ -1,0 +1,6 @@
+sentence-transformers
+faiss-cpu
+transformers>=4.30
+torch
+pdfplumber
+tqdm
